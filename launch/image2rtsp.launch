@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="subTopic" 		default="/usb_cam/image_raw"/>
+	<arg name="width" 			default="640" />
+	<arg name="height" 	        default="480" />
+	<arg name="fps" 			default="15"/>
+
+	<node pkg="image2rtsp" type="image2rtsp" name="image2rtsp" output="screen">
+
+		<param name="subTopic" 		type="str" value="$(arg subTopic)" />
+		<param name="width" 		type="int" value="$(arg width)" />
+		<param name="height" 	    type="int" value="$(arg height)" />
+		<param name="fps" 	        type="int" value="$(arg fps)" />
+
+    </node>
+</launch>
