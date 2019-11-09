@@ -13,6 +13,10 @@ extern "C"{
 #include <libavcodec/avcodec.h>
 }
 
+namespace i2r{
+
+namespace enc{
+    
 class Encoder{
 public:
     Encoder(): m_encoder(nullptr), m_inPixelFormat(AV_PIX_FMT_NONE), m_outPixelFormat(AV_PIX_FMT_NONE), m_numNals(0), m_pts(0) {
@@ -213,5 +217,8 @@ private:
     int m_numNals;
     int m_pts;
 };
+
+} // i2r
+} // enc
 
 #endif

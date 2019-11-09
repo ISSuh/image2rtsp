@@ -125,6 +125,7 @@ include_directories(
 
 link_directories(
   ${x264_LIBRARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
 
 
@@ -156,11 +157,17 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PRE
 # Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+
   x264
   swscale
   avformat
   avcodec
   avutil
+
+  BasicUsageEnvironment
+  groupsock
+  liveMedia
+  UsageEnvironment
 )
 
 #############
