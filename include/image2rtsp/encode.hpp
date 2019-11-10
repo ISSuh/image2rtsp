@@ -14,7 +14,6 @@ extern "C"{
 }
 
 namespace i2r{
-
 namespace enc{
     
 class Encoder{

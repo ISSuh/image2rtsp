@@ -13,8 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Boost REQUIRED COMPONENTS system)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -114,20 +113,22 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-
 include_directories(
-  ${x264_INCLUDE_DIR}
-  /usr/local/include
-  /usr/include/aarch64-linux-gnu
   include
   ${catkin_INCLUDE_DIRS}
-)
+
+  ${x264_INCLUDE_DIR}
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/live555/BasicUsageEnvironment
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/live555/groupsock
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/live555/liveMedia
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/live555/UsageEnvironment
+ )
 
 link_directories(
   ${x264_LIBRARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
-
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -164,9 +165,9 @@ target_link_libraries(${PROJECT_NAME}
   avcodec
   avutil
 
-  BasicUsageEnvironment
   groupsock
   liveMedia
+  BasicUsageEnvironment
   UsageEnvironment
 )
 
