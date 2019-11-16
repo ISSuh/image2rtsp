@@ -13,14 +13,14 @@ extern "C"{
 #include <libavcodec/avcodec.h>
 }
 
+#include <image2rtsp/buffer.hpp>
+
 namespace i2r{
 namespace enc{
     
 class Encoder{
 public:
-    Encoder(): m_encoder(nullptr), m_inPixelFormat(AV_PIX_FMT_NONE), m_outPixelFormat(AV_PIX_FMT_NONE), m_numNals(0), m_pts(0) {
-        m_nals = std::make_shared<x264_nal_t*>(new x264_nal_t());
-        
+    Encoder(i2r::util::Buffer<x264_nal_t>& buffer): m_encoder(nullptr), m_inPixelFormat(AV_PIX_FMT_NONE), m_outPixelFormat(AV_PIX_FMT_NONE), m_numNals(0), m_pts(0), m_buffer(buffer){
         memset((char *)&m_picRaw, 0, sizeof(m_picRaw));
     }
 
@@ -46,12 +46,9 @@ public:
             m_x264Params.i_fps_num = fps;
             m_x264Params.i_fps_den = 1;
             m_x264Params.i_csp = X264_CSP_I420;
-
-            std::cout << m_x264Params.i_width << " - " << m_x264Params.i_height << std::endl;
-
             
             // Intra refres:
-            m_x264Params.i_keyint_max = fps;
+            m_x264Params.i_keyint_max = 60;
             m_x264Params.b_intra_refresh = 1;
             
             //Rate control:
@@ -61,14 +58,12 @@ public:
             
             //For streaming:
             m_x264Params.b_repeat_headers = 1;
-            m_x264Params.b_annexb = 1;
-
-            m_x264Params.i_log_level = X264_LOG_DEBUG;
-            
+            m_x264Params.b_annexb = 1;            
             x264_param_apply_profile(&m_x264Params, "baseline");
 
             m_in.i_type = X264_TYPE_AUTO;
             m_in.img.i_csp = X264_CSP_I420;
+            m_in.img.i_plane = 3;
 
             m_inPixelFormat = AV_PIX_FMT_RGB24;
             m_outPixelFormat = AV_PIX_FMT_YUV420P;
@@ -102,7 +97,7 @@ public:
         return true;
     }
 
-    bool encoding(const uint8_t* src, std::vector<uint8_t>& dst){
+    bool encoding(const uint8_t* src){
         int srcStride = m_x264Params.i_width * 3;
 
         if (!*m_sws){
@@ -123,18 +118,17 @@ public:
 
         m_in.i_pts = m_pts;
                 
-        int frame_size = x264_encoder_encode(*m_encoder, m_nals.get(), &m_numNals, &m_in, &m_out);
-        ROS_INFO("size : %d / %d", frame_size, m_numNals);
-        if (frame_size){
-            // // Write File
-            // if(!fwrite(nals[0].p_payload, frame_size, 1, fp)) {
-            //     ROS_ERROR("Encode failed: %d", h);
-            //     return false;
-            // }
+        int frame_size = x264_encoder_encode(*m_encoder, &m_nals, &m_numNals, &m_in, &m_out);
+        if(frame_size){        
+            
+            static bool alreadydone = false;
+            if(!alreadydone){
+                x264_encoder_headers(*m_encoder, &m_nals, &m_numNals);
+                alreadydone = true;
+            }
 
-            // for(int i = 0 ; i < num_nals ; i++){
-            //     Out.push(nals[i]);
-            // }
+            for(int i = 0 ; i < m_numNals ; i++)
+                m_buffer.Push(m_nals[i]);
         }
         else
             return false;
@@ -168,7 +162,7 @@ private:
         m_x264Params.b_repeat_headers = 1;
         m_x264Params.b_annexb = 1;
 
-        m_x264Params.i_log_level = X264_LOG_DEBUG;
+        m_x264Params.i_log_level = X264_LOG_ERROR;
         
         x264_param_apply_profile(&m_x264Params, "baseline");
 
@@ -202,7 +196,7 @@ private:
     // x264
     x264_param_t m_x264Params;
     std::shared_ptr<x264_t*> m_encoder;
-    std::shared_ptr<x264_nal_t*> m_nals;
+    x264_nal_t* m_nals;
 
     x264_picture_t m_in;
     x264_picture_t m_out;
@@ -215,6 +209,9 @@ private:
 
     int m_numNals;
     int m_pts;
+
+    // buffer
+    i2r::util::Buffer<x264_nal_t>& m_buffer;
 };
 
 } // i2r

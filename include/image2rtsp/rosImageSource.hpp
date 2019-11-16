@@ -1,18 +1,107 @@
 #ifndef IMAGE2RTSP_ROSIMAGESOURCE
 #define IMAGE2RTSP_ROSIMAGESOURCE
 
-#include <live555/ByteStreamMemoryBufferSource.hh>
+#include <live555/FramedSource.hh>
 
 namespace i2r{
 namespace net{
 
-class RosImageSource{
+class RosImageSource : public FramedSource{
 public:
-    RosImageSource(){}
-    ~RosImageSource(){}
+    static EventTriggerId eventTriggerId;
     
+    static RosImageSource* createNew(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>& buffer, unsigned preferredFrameSize, unsigned playTimePerFrame){
+        return new RosImageSource(env, buffer, preferredFrameSize, playTimePerFrame);
+    }
+
+protected:
+    RosImageSource(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>& buffer, unsigned preferredFrameSize, unsigned playTimePerFrame) 
+        :   FramedSource(env),
+            fPreferredFrameSize(fMaxSize),
+            fPlayTimePerFrame(playTimePerFrame),
+            fLastPlayTime(0),
+            m_buffer(buffer){
+        if(m_referenceCount == 0)
+        {
+
+        }
+        
+        ++m_referenceCount;
+        
+        if(eventTriggerId == 0){
+            eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
+        }
+    }
+    
+    virtual ~RosImageSource(void){
+        --m_referenceCount;
+        envir().taskScheduler().deleteEventTrigger(eventTriggerId);
+        eventTriggerId = 0;
+    }
+
 private:
-    ByteStreamMemoryBufferSource* m_byteBurrerSource;
+    virtual void doGetNextFrame(){
+        deliverFrame();
+    }
+    
+    static void deliverFrame0(void* clientData){
+        ((RosImageSource*)clientData)->deliverFrame();
+    }
+    
+    void deliverFrame(){
+        if(!isCurrentlyAwaitingData()) return;
+        
+        try{
+            if (fPlayTimePerFrame > 0 && fPreferredFrameSize > 0) {
+                if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
+                // This is the first frame, so use the current time:
+                gettimeofday(&fPresentationTime, NULL);
+                } else {
+                // Increment by the play time of the previous data:
+                unsigned uSeconds	= fPresentationTime.tv_usec + fLastPlayTime;
+                fPresentationTime.tv_sec += uSeconds/1000000;
+                fPresentationTime.tv_usec = uSeconds%1000000;
+                }
+
+                // Remember the play time of this data:
+                fLastPlayTime = (fPlayTimePerFrame*fFrameSize)/fPreferredFrameSize;
+                fDurationInMicroseconds = fLastPlayTime;
+            } else {
+                // We don't know a specific play time duration for this data,
+                // so just record the current time as being the 'presentation time':
+                gettimeofday(&fPresentationTime, NULL);
+            }
+
+            x264_nal_t nalToDeliver = m_buffer.WaitPop();
+
+            unsigned newFrameSize = nalToDeliver.i_payload;
+
+            if (newFrameSize > fMaxSize) {
+                fFrameSize = fMaxSize;
+                fNumTruncatedBytes = newFrameSize - fMaxSize;
+            }
+            else {
+                fFrameSize = newFrameSize;
+            }
+            
+            memcpy(fTo, nalToDeliver.p_payload, nalToDeliver.i_payload);
+            FramedSource::afterGetting(this);
+        }
+        catch(int e){
+            std::cout << e << std::endl;
+        }
+    }
+
+private:
+    unsigned fPreferredFrameSize;
+    unsigned fPlayTimePerFrame;
+    unsigned fNumSources;
+    unsigned fCurrentlyReadSourceNumber;
+    unsigned fLastPlayTime;
+
+    unsigned m_referenceCount;
+    i2r::util::Buffer<x264_nal_t>& m_buffer;
+    timeval m_currentTime;
 };
 
 } // net

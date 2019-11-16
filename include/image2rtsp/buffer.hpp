@@ -25,27 +25,23 @@ public:
         return m_queue.empty();
     }
 
-    bool Pop(Data& value){
-        boost::mutex::scoped_lock lock(m_mutex);
-        
-        if(m_queue.empty())
-            return false;
-                
-        value=m_queue.front();
-        m_queue.pop();
-
-        return true;
-    }
-
-    void WaitPop(Data& value){
+    const Data WaitPop(){
         boost::mutex::scoped_lock lock(m_mutex);
         
         while(m_queue.empty())
             m_cv.wait(lock);
         
-        value=m_queue.front();
+        auto value = m_queue.front();
         m_queue.pop();
+
+        return value;
     }
+
+    const size_t Size(){
+        boost::mutex::scoped_lock lock(m_mutex);
+        return m_queue.size();
+    }
+    
 
 private:
     std::queue<Data> m_queue;

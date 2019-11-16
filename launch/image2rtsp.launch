@@ -4,7 +4,10 @@
 	<arg name="subTopic" 		default="/usb_cam/image_raw"/>
 	<arg name="width" 			default="640" />
 	<arg name="height" 	        default="480" />
-	<arg name="fps" 			default="15"/>
+	<arg name="fps" 			default="30"/>
+	<arg name="streamUrl" 	    default="test" />
+	<arg name="port" 			default="8554"/>
+	
 
 	<node pkg="image2rtsp" type="image2rtsp" name="image2rtsp" output="screen">
 
@@ -12,6 +15,8 @@
 		<param name="width" 		type="int" value="$(arg width)" />
 		<param name="height" 	    type="int" value="$(arg height)" />
 		<param name="fps" 	        type="int" value="$(arg fps)" />
+		<param name="streamUrl" 	type="str" value="$(arg streamUrl)" />
+		<param name="port" 	        type="int" value="$(arg port)" />
 
     </node>
 </launch>

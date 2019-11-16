@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <iostream>
+#include <thread>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -22,26 +23,40 @@ public:
 	}
 
 	bool Init(){
-		m_encoder = std::unique_ptr<i2r::enc::Encoder>(new i2r::enc::Encoder());
+		m_encoder = std::unique_ptr<i2r::enc::Encoder>(new i2r::enc::Encoder(m_buffer));
         if(!m_encoder->open(m_width, m_height, m_fps))
 			return false;
 
-		m_rtsp = std::unique_ptr<i2r::net::Rtsp>(new i2r::net::Rtsp(m_serverPort, m_streamUrl, m_subTopic));
-		if(m_rtsp->Init())
+		m_rtsp = std::unique_ptr<i2r::net::Rtsp>(new i2r::net::Rtsp(m_serverPort, m_streamUrl, m_subTopic, m_buffer));
+		if(!m_rtsp->Init())
 			return false;
 
+		m_rtsp->AddSession();
+
 		m_sub = m_nh->subscribe(m_subTopic, 10, &Image2RTSP_sample::callback, this);
+
+		m_thread = std::unique_ptr<std::thread>(new std::thread(&Image2RTSP_sample::ServerRun, this));
 
 		return true;
 	}
 
+	void ServerRun(){
+		m_rtsp->Play();
+
+		m_rtsp->DoEvent();
+	}
+
+private:
 	void callback(const sensor_msgs::Image::ConstPtr &msg){
-        std::vector<uint8_t> h264Image;
+        std::vector<x264_nal_t> h264Image;
 
 		// ros image to h264 stream
-        m_encoder->encoding(&(msg->data[0]), h264Image);
-
-		// h264 stream in buffer
+		try{
+        	m_encoder->encoding(&(msg->data[0]));
+		}
+		catch(int e){
+			std::cout << "encode error - " << e << std::endl;
+		}
 	}
 
 private:
@@ -53,7 +68,9 @@ private:
     // encoder
     std::unique_ptr<i2r::enc::Encoder> m_encoder;
 	std::unique_ptr<i2r::net::Rtsp> m_rtsp;
-	i2r::util::Buffer<uint8_t> buffer;
+	i2r::util::Buffer<x264_nal_t> m_buffer;
+
+	std::unique_ptr<std::thread> m_thread;
 
     // param
 	int m_width;

@@ -2,25 +2,30 @@
 #define IMAGE2RTSP_RTSP
 
 #include <memory>
+#include <thread>
 
 #include <ros/ros.h>
 
 #include <live555/BasicUsageEnvironment.hh>
 #include <live555/GroupsockHelper.hh>
 #include <live555/liveMedia.hh>
+
+#include <image2rtsp/rosTaskScheduler.hpp>
 #include <image2rtsp/rosImageSource.hpp>
 
 namespace i2r{
 namespace net{
 
-// TODO : implement
+extern EventTriggerId RosImageSource::eventTriggerId = 0;
+
 class Rtsp{
 public:
-    Rtsp(const int port, const std::string& streamName, const std::string& subTopic) :  
+    Rtsp(const int port, const std::string& streamName, const std::string& subTopic, i2r::util::Buffer<x264_nal_t>& buffer) :  
                                     m_rtpPortNum(18888), m_rtcpPortNum(m_rtpPortNum+1), m_ttl(255),
                                     m_rtpPort(m_rtpPortNum), m_rtcpPort(m_rtcpPortNum),
                                     m_rtpPayloadFormat(96), m_estimatedSessionBandwidth(500),
-                                    m_rtspPort(port), m_streamName(streamName), m_subTopic(subTopic){
+                                    m_rtspPort(port), m_streamName(streamName), m_subTopic(subTopic),
+                                    m_buffer(buffer){
         m_scheduler = std::unique_ptr<TaskScheduler>(BasicTaskScheduler::createNew());
         m_env = BasicUsageEnvironment::createNew(*m_scheduler);
         m_authDB = std::unique_ptr<UserAuthenticationDatabase>(nullptr);
@@ -38,7 +43,7 @@ public:
         
         OutPacketBuffer::maxSize = 100000;
         
-        m_videoSink = H264VideoRTPSink::createNew(*m_env, m_rtpGroupSock.get(), m_rtpPayloadFormat);
+        m_videoSink = H264VideoRTPSink::createNew(*m_env, m_rtpGroupSock.get(), 103);
 
         int cNameLen = 100;
         m_cName.resize(cNameLen + 1, 0);
@@ -53,18 +58,33 @@ public:
             return false;
         }
 
+        return true;
+    }
+
+    void AddSession(){
         m_sms = ServerMediaSession::createNew(*m_env, m_streamName.c_str(), 
                 "ROS_IMAGE", "Session streamed ROS IMAGE", True );
         m_sms->addSubsession(PassiveServerMediaSubsession::createNew(*m_videoSink, m_rtcp));
         m_rtspServer->addServerMediaSession(m_sms);
+
+        char* url = m_rtspServer->rtspURL(m_sms);
+        *m_env << "Play this stream using the URL \"" << url << "\"\n";
+        delete[] url;
     }
 
     void Play(){
-        m_rosImageSource = i2r::net::RosImageSource::createNew(*m_env);
+
+        m_rosImageSource = i2r::net::RosImageSource::createNew(*m_env, m_buffer, 0, 0);
         m_videoES = m_rosImageSource;
 
         m_videoSource = H264VideoStreamFramer::createNew(*m_env, m_videoES);
-        m_videoSink->startPlaying(*m_videoSource, this->FinishPlay, m_videoSink);
+        
+        m_videoSink->startPlaying(*m_videoSource, NULL, m_videoSink);
+    }
+
+
+    void DoEvent(){
+          m_env->taskScheduler().doEventLoop();
     }
 
 private:
@@ -72,8 +92,6 @@ private:
         m_videoSink->stopPlaying();
         Medium::close(m_videoSource);
     }
-
-
 
 private:
     // live555
@@ -102,7 +120,7 @@ private:
     ServerMediaSession* m_sms;
     FramedSource* m_videoES;
 
-    RosImageSource* m_rosImageSource; 
+    i2r::net::RosImageSource* m_rosImageSource; 
 
     H264VideoStreamFramer* m_videoSource;
 
@@ -111,6 +129,11 @@ private:
     std::string m_streamName;
     std::string m_subTopic;
     unsigned char m_rtpPayloadFormat;
+
+    //buffer
+    i2r::util::Buffer<x264_nal_t>& m_buffer;
+
+    std::unique_ptr<std::thread> m_evnetThread;
 };
 
 } // net
