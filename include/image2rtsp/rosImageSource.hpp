@@ -51,45 +51,39 @@ private:
     void deliverFrame(){
         if(!isCurrentlyAwaitingData()) return;
         
-        try{
-            if (fPlayTimePerFrame > 0 && fPreferredFrameSize > 0) {
-                if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
+        if (fPlayTimePerFrame > 0 && fPreferredFrameSize > 0) {
+            if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
                 // This is the first frame, so use the current time:
                 gettimeofday(&fPresentationTime, NULL);
-                } else {
+            } 
+            else {
                 // Increment by the play time of the previous data:
                 unsigned uSeconds	= fPresentationTime.tv_usec + fLastPlayTime;
                 fPresentationTime.tv_sec += uSeconds/1000000;
                 fPresentationTime.tv_usec = uSeconds%1000000;
-                }
-
-                // Remember the play time of this data:
-                fLastPlayTime = (fPlayTimePerFrame*fFrameSize)/fPreferredFrameSize;
-                fDurationInMicroseconds = fLastPlayTime;
-            } else {
-                // We don't know a specific play time duration for this data,
-                // so just record the current time as being the 'presentation time':
-                gettimeofday(&fPresentationTime, NULL);
             }
 
-            x264_nal_t nalToDeliver = m_buffer.WaitPop();
-
-            unsigned newFrameSize = nalToDeliver.i_payload;
-
-            if (newFrameSize > fMaxSize) {
-                fFrameSize = fMaxSize;
-                fNumTruncatedBytes = newFrameSize - fMaxSize;
-            }
-            else {
-                fFrameSize = newFrameSize;
-            }
-            
-            memcpy(fTo, nalToDeliver.p_payload, nalToDeliver.i_payload);
-            FramedSource::afterGetting(this);
+            fLastPlayTime = (fPlayTimePerFrame*fFrameSize)/fPreferredFrameSize;
+            fDurationInMicroseconds = fLastPlayTime;
+        } 
+        else {
+            gettimeofday(&fPresentationTime, NULL);
         }
-        catch(int e){
-            std::cout << e << std::endl;
+
+        x264_nal_t nalToDeliver = m_buffer.WaitPop();
+
+        unsigned newFrameSize = nalToDeliver.i_payload;
+
+        if (newFrameSize > fMaxSize) {
+            fFrameSize = fMaxSize;
+            fNumTruncatedBytes = newFrameSize - fMaxSize;
         }
+        else {
+            fFrameSize = newFrameSize;
+        }
+        
+        memcpy(fTo, nalToDeliver.p_payload, nalToDeliver.i_payload);
+        FramedSource::afterGetting(this);
     }
 
 private:
