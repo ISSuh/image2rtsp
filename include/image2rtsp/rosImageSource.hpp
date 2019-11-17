@@ -3,6 +3,12 @@
 
 #include <live555/FramedSource.hh>
 
+extern "C"{
+#include <x264.h>
+}
+
+#include <image2rtsp/buffer.hpp>
+
 namespace i2r{
 namespace net{
 

@@ -3,9 +3,7 @@
 
 #include <queue>
 #include <mutex>
-#include <boost/asio.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+#include <condition_variable>
 
 namespace i2r{
 namespace util{
@@ -14,19 +12,19 @@ template<typename Data>
 class Buffer{
 public:
     void Push(Data const& data){
-        boost::mutex::scoped_lock lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         m_queue.push(data);
-        lock.unlock();
+
         m_cv.notify_one();
     }
 
-    bool Empty() const{
-        boost::mutex::scoped_lock lock(m_mutex);
+    bool Empty(){
+        std::unique_lock<std::mutex> lock(m_mutex);
         return m_queue.empty();
     }
 
     const Data WaitPop(){
-        boost::mutex::scoped_lock lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         
         while(m_queue.empty())
             m_cv.wait(lock);
@@ -38,15 +36,16 @@ public:
     }
 
     const size_t Size(){
-        boost::mutex::scoped_lock lock(m_mutex);
+        std:: unique_lock<std::mutex> lock(m_mutex);
+
         return m_queue.size();
     }
     
 
 private:
     std::queue<Data> m_queue;
-    mutable boost::mutex m_mutex;
-    boost::condition_variable m_cv;
+    std::mutex m_mutex;
+    std::condition_variable m_cv;
 };
 
 } // util

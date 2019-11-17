@@ -25,7 +25,6 @@ namespace enc{
 class Encoder{
 public:
     Encoder(i2r::util::Buffer<x264_nal_t>& buffer): m_encoder(nullptr), m_numNals(0), m_pts(0), m_buffer(buffer) {
-        memset((char *)&m_picRaw, 0, sizeof(m_picRaw));
     }
 
     ~Encoder(){
@@ -34,8 +33,6 @@ public:
 
         if (*m_sws)
             sws_freeContext(*m_sws);
-        
-        memset((char *)&m_picRaw, 0, sizeof(m_picRaw));
     }
 
     bool open(const int& srcWidth, const int& srcHeight, const int& dstWidth, const int& dstHeight, const int& fps){
@@ -148,7 +145,6 @@ private:
     x264_picture_t m_out;
 
     std::shared_ptr<SwsContext*> m_sws;
-    AVPicture m_picRaw;
 
     int m_numNals;
     int m_pts;
