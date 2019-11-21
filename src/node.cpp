@@ -12,7 +12,7 @@
 
 class Image2RTSP_sample{
 public:
-	Image2RTSP_sample() : m_srcWidth(0), m_srcHeight(0), m_dstWidth(0), m_dstHeight(0), m_fps(0) {
+	Image2RTSP_sample() {
 		m_nh = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle("~"));
 
 		m_nh->getParam("port", m_serverPort);
