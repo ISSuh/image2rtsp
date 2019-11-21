@@ -76,7 +76,7 @@ private:
             gettimeofday(&fPresentationTime, NULL);
         }
 
-        x264_nal_t nalToDeliver = m_buffer.WaitPop();
+        x264_nal_t nalToDeliver = m_buffer.Pop();
 
         unsigned newFrameSize = nalToDeliver.i_payload;
 

@@ -2,40 +2,34 @@
 <launch>
 	<arg name="port" 			default="8554"/>
 	<arg name="sessionNumber" 	default="2"/>
+	<arg name="bufferSize" 		default="50"/>
 	
 	<arg name="subTopic_0" 		default="/usb_cam/image_raw"/>
 	<arg name="srcWidth_0" 		default="640"/>
 	<arg name="srcHeight_0"		default="480"/>
-	<arg name="dstWidth_0" 		default="640"/>
-	<arg name="dstHeight_0"		default="480"/>
 	<arg name="fps_0" 			default="30"/>
 	<arg name="streamUrl_0" 	default="test1"/>
 
 	<arg name="subTopic_1" 		default="/usb_cam/image_raw"/>
 	<arg name="srcWidth_1" 		default="640"/>
 	<arg name="srcHeight_1"		default="480"/>
-	<arg name="dstWidth_1" 		default="640"/>
-	<arg name="dstHeight_1"		default="480"/>
 	<arg name="fps_1" 			default="30"/>
 	<arg name="streamUrl_1" 	default="test2"/>
 
 	<node pkg="image2rtsp" type="image2rtsp" name="image2rtsp" output="screen">
 		<param name="port" 	        type="int" value="$(arg port)"/>
 		<param name="sessionNumber"	type="int" value="$(arg sessionNumber)"/>
+		<param name="bufferSize"	type="int" value="$(arg bufferSize)"/>
 			
 		<param name="subTopic_0" 	type="str" value="$(arg subTopic_0)"/>
 		<param name="srcWidth_0" 	type="int" value="$(arg srcWidth_0)"/>
 		<param name="srcHeight_0"	type="int" value="$(arg srcHeight_0)"/>
-		<param name="dstWidth_0" 	type="int" value="$(arg dstWidth_0)"/>
-		<param name="dstHeight_0"	type="int" value="$(arg dstHeight_0)"/>
 		<param name="fps_0"			type="int" value="$(arg fps_0)"/>
 		<param name="streamUrl_0" 	type="str" value="$(arg streamUrl_0)"/>
 
 		<param name="subTopic_1" 	type="str" value="$(arg subTopic_1)"/>
 		<param name="srcWidth_1" 	type="int" value="$(arg srcWidth_1)"/>
 		<param name="srcHeight_1"	type="int" value="$(arg srcHeight_1)"/>
-		<param name="dstWidth_1" 	type="int" value="$(arg dstWidth_1)"/>
-		<param name="dstHeight_1"	type="int" value="$(arg dstHeight_1)"/>
 		<param name="fps_1"			type="int" value="$(arg fps_1)"/>
 		<param name="streamUrl_1" 	type="str" value="$(arg streamUrl_1)"/>
     </node>

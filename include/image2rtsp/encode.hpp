@@ -35,12 +35,10 @@ public:
             sws_freeContext(*m_sws);
     }
 
-    bool open(const int& srcWidth, const int& srcHeight, const int& dstWidth, const int& dstHeight, const int& fps){
-        m_dstWidth = dstWidth;
-        m_dstHeight = dstHeight;
-
+    bool open(const int& srcWidth, const int& srcHeight, const int& fps){
+        // set x264 param
         {
-            x264_param_default_preset(&m_x264Params, "veryfast", "zerolatency");
+            x264_param_default_preset(&m_x264Params, "ultrafast", "zerolatency");
             m_x264Params.i_log_level = X264_LOG_ERROR;
 
             m_x264Params.i_threads = 2;
@@ -69,23 +67,27 @@ public:
             m_in.img.i_csp = X264_CSP_I420;
         }
 
-        if(m_encoder){
-            ROS_ERROR("Already opened. first call close()");
-            return false;
+        // create x264 handle 
+        {
+            if(m_encoder){
+                ROS_ERROR("Already opened. first call close()");
+                return false;
+            }
+
+            m_encoder = std::make_shared<x264_t*>(x264_encoder_open(&m_x264Params));
+            if (!m_encoder){
+                ROS_ERROR("Cannot open the encoder");
+                return false;
+            }
+
+            if(x264_picture_alloc(&m_in, m_x264Params.i_csp, m_x264Params.i_width, m_x264Params.i_height)){
+                ROS_ERROR("Cannot allocate x264 picure");
+                return false;
+            }
         }
 
-        m_encoder = std::make_shared<x264_t*>(x264_encoder_open(&m_x264Params));
-        if (!m_encoder){
-            ROS_ERROR("Cannot open the encoder");
-            return false;
-        }
-
-        if(x264_picture_alloc(&m_in, m_x264Params.i_csp, m_dstWidth, m_dstHeight)){
-            ROS_ERROR("Cannot allocate x264 picure");
-            return false;
-        }
-
-        m_sws = std::make_shared<SwsContext*>(sws_getContext(m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_RGB24, m_dstWidth, m_dstHeight, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL));
+        // create sws handle
+        m_sws = std::make_shared<SwsContext*>(sws_getContext(m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_RGB24, m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL));
         if (!*m_sws){
             ROS_ERROR("Cannot create SWS context");
             return false;
@@ -94,18 +96,18 @@ public:
         return true;
     }
 
-    bool encoding(const uint8_t* src){
-        int srcStride = m_x264Params.i_width * 3;
-        int dstStride[4] = {m_dstWidth, m_dstWidth >> 1, m_dstWidth >> 1, 0};
-        
+    bool encoding(const uint8_t* src){  
+        // scale change
         {
+            int srcStride = m_x264Params.i_width * 3;
+
             if (!*m_sws){
                 ROS_ERROR("Not initialized, so cannot encode");
                 return false;
             }
         
-            int h = sws_scale(*m_sws, &src, &srcStride, 0, m_x264Params.i_height, m_in.img.plane, dstStride);
-            if (h != m_dstHeight){
+            int h = sws_scale(*m_sws, &src, &srcStride, 0, m_x264Params.i_height, m_in.img.plane, m_in.img.i_stride);
+            if (h != m_x264Params.i_height){
                 ROS_ERROR("scale failed: %d", h);
                 return false;
             }
@@ -113,6 +115,7 @@ public:
             m_in.i_pts = m_pts;
         }
         
+        // encode to h264
         {                
             int frame_size = x264_encoder_encode(*m_encoder, &m_nals, &m_numNals, &m_in, &m_out);
             if(frame_size){        
@@ -148,9 +151,6 @@ private:
 
     int m_numNals;
     int m_pts;
-
-    int m_dstWidth;
-    int m_dstHeight;
 
     // buffer
     i2r::util::Buffer<x264_nal_t>& m_buffer;
