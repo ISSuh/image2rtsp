@@ -3,6 +3,7 @@
 #define IMAGE2RTSP_ENCODER
 
 #include <ros/ros.h>
+#include <sensor_msgs/image_encodings.h>
 
 #include <queue>
 #include <memory>
@@ -28,14 +29,22 @@ public:
     }
 
     ~Encoder(){
-        if (*m_encoder)
-            x264_encoder_close(*m_encoder);
+        // if (*m_encoder.get())
+        //     x264_encoder_close(*m_encoder);
 
-        if (*m_sws)
-            sws_freeContext(*m_sws);
+        // if (*m_sws)
+        //     sws_freeContext(*m_sws);
     }
 
-    bool open(const int& srcWidth, const int& srcHeight, const int& fps){
+    bool open(const int& srcWidth, const int& srcHeight, const int& fps, const std::string& enc){
+        // set color format
+        {
+            if(enc == sensor_msgs::image_encodings::RGB8)
+                m_inFormat = AV_PIX_FMT_RGB24;
+            else if(enc == sensor_msgs::image_encodings::RGBA8)
+                m_inFormat = AV_PIX_FMT_RGBA;
+        }
+        
         // set x264 param
         {
             x264_param_default_preset(&m_x264Params, "ultrafast", "zerolatency");
@@ -87,7 +96,7 @@ public:
         }
 
         // create sws handle
-        m_sws = std::make_shared<SwsContext*>(sws_getContext(m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_RGB24, m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL));
+        m_sws = std::make_shared<SwsContext*>(sws_getContext(m_x264Params.i_width, m_x264Params.i_height, m_inFormat, m_x264Params.i_width, m_x264Params.i_height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL));
         if (!*m_sws){
             ROS_ERROR("Cannot create SWS context");
             return false;
@@ -140,6 +149,8 @@ public:
 
 private:
     // x264
+    AVPixelFormat m_inFormat;
+
     x264_param_t m_x264Params;
     std::shared_ptr<x264_t*> m_encoder;
     x264_nal_t* m_nals;

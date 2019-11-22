@@ -16,12 +16,12 @@ class RosImageSource : public FramedSource{
 public:
     static EventTriggerId eventTriggerId;
     
-    static RosImageSource* createNew(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>& buffer, unsigned preferredFrameSize, unsigned playTimePerFrame){
+    static RosImageSource* createNew(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>* buffer, unsigned preferredFrameSize, unsigned playTimePerFrame){
         return new RosImageSource(env, buffer, preferredFrameSize, playTimePerFrame);
     }
 
 protected:
-    RosImageSource(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>& buffer, unsigned preferredFrameSize, unsigned playTimePerFrame) 
+    RosImageSource(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>* buffer, unsigned preferredFrameSize, unsigned playTimePerFrame) 
         :   FramedSource(env),
             fPreferredFrameSize(fMaxSize),
             fPlayTimePerFrame(playTimePerFrame),
@@ -57,6 +57,8 @@ private:
     void deliverFrame(){
         if(!isCurrentlyAwaitingData()) return;
         
+        m_buffer->Pop(m_nalToDeliver);
+
         if (fPlayTimePerFrame > 0 && fPreferredFrameSize > 0) {
             if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
                 // This is the first frame, so use the current time:
@@ -75,10 +77,10 @@ private:
         else {
             gettimeofday(&fPresentationTime, NULL);
         }
+        
 
-        x264_nal_t nalToDeliver = m_buffer.Pop();
 
-        unsigned newFrameSize = nalToDeliver.i_payload;
+        unsigned newFrameSize = m_nalToDeliver.i_payload;
 
         if (newFrameSize > fMaxSize) {
             fFrameSize = fMaxSize;
@@ -88,7 +90,7 @@ private:
             fFrameSize = newFrameSize;
         }
         
-        memcpy(fTo, nalToDeliver.p_payload, nalToDeliver.i_payload);
+        memcpy(fTo, m_nalToDeliver.p_payload, m_nalToDeliver.i_payload);
         FramedSource::afterGetting(this);
     }
 
@@ -99,8 +101,10 @@ private:
     unsigned fCurrentlyReadSourceNumber;
     unsigned fLastPlayTime;
 
+    x264_nal_t m_nalToDeliver;
+    i2r::util::Buffer<x264_nal_t>* m_buffer;
+
     unsigned m_referenceCount;
-    i2r::util::Buffer<x264_nal_t>& m_buffer;
     timeval m_currentTime;
 };
 

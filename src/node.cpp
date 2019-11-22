@@ -17,15 +17,17 @@ public:
 
 		m_nh->getParam("port", m_serverPort);
 		m_nh->getParam("sessionNumber", m_sessionNumber);
-		m_nh->getParam("buffSize", m_buffSize);
+		m_nh->getParam("bufferSize", m_buffSize);
 
 		m_srcWidth = std::vector<int>(m_sessionNumber, 0);
 		m_srcHeight = std::vector<int>(m_sessionNumber, 0);
+		m_imageEncode = std::vector<std::string>(m_sessionNumber);
 		m_fps = std::vector<int>(m_sessionNumber, 0);
 		m_streamUrl = std::vector<std::string>(m_sessionNumber);
 		m_subTopic = std::vector<std::string>(m_sessionNumber);
-		
-		m_buffer = std::vector<i2r::util::Buffer<x264_nal_t>>(m_sessionNumber);
+
+		m_buffer = new i2r::util::Buffer<x264_nal_t>[m_sessionNumber];
+		m_nextFrameThread = new std::thread[m_sessionNumber];
 
 		for(auto i = 0 ; i < m_sessionNumber ; ++i){
 			std::string index = std::to_string(i);
@@ -33,53 +35,61 @@ public:
 			m_nh->getParam("subTopic_" 	+ index, m_subTopic[i]);
 			m_nh->getParam("srcWidth_" 	+ index, m_srcWidth[i]);
 			m_nh->getParam("srcHeight_" + index, m_srcHeight[i]);
+			m_nh->getParam("encode_" 	+ index, m_imageEncode[i]);
         	m_nh->getParam("fps_" 		+ index, m_fps[i]);
 			m_nh->getParam("streamUrl_" + index, m_streamUrl[i]);
 
 			m_buffer[i].SetBuffSize(m_buffSize);
+			m_encoder.push_back(i2r::enc::Encoder(m_buffer[i]));
 		}
+	}
 
-		std::cout << &m_buffer[0] << " / " << &m_buffer[1] << std::endl;
+	~Image2RTSP_sample(){
+		delete[] m_buffer;
 	}
 
 	bool Init(){
-		m_rtsp = std::unique_ptr<i2r::net::RosRtspServer>(new i2r::net::RosRtspServer(m_serverPort));
-		if(!m_rtsp->Init())
-			return false;
+		// initialize x264 handle & rtsp stream
+		{	
+			m_rtsp = std::unique_ptr<i2r::net::RosRtspServer>(new i2r::net::RosRtspServer(m_serverPort, m_sessionNumber, m_buffer));
+			if(!m_rtsp->Init())
+				return false;
 
-		for(auto& streamUrl : m_streamUrl)
-			m_rtsp->AddSession(streamUrl);
 
-		m_sub.push_back(m_nh->subscribe(m_subTopic[0], 10, &Image2RTSP_sample::Session_0_callback, this));
-		m_sub.push_back(m_nh->subscribe(m_subTopic[1], 10, &Image2RTSP_sample::Session_1_callback, this));
+			for(auto i = 0 ; i < m_sessionNumber ; ++i){
+				if(!m_encoder[i].open(m_srcWidth[i], m_srcHeight[i], m_fps[i], m_imageEncode[i])){
+					return false;
+				}
+
+				m_rtsp->AddSession(m_streamUrl[i], i);
+			}
+		}
+
+		// regist ros subscribe callback
+		{
+			m_sub.push_back(m_nh->subscribe(m_subTopic[0], 10, &Image2RTSP_sample::Session_0_callback, this));
+			m_sub.push_back(m_nh->subscribe(m_subTopic[1], 10, &Image2RTSP_sample::Session_1_callback, this));
+		}
 		
-		m_thread = std::unique_ptr<std::thread>(new std::thread(&Image2RTSP_sample::ServerRun, this));
+		m_rtspServer_thread = std::unique_ptr<std::thread>(new std::thread(&Image2RTSP_sample::ServerRun, this));
 
 		return true;
 	}
 
 	void ServerRun(){
 		for(auto i = 0 ; i < m_sessionNumber ; ++i)
-			m_rtsp->Play(i, &(m_buffer[i]));
+			m_nextFrameThread[i] = std::thread(&i2r::net::RosRtspServer::Play, m_rtsp.get(), i);
 
 		m_rtsp->DoEvent();
 	}
 
 private:
 	void Session_0_callback(const sensor_msgs::Image::ConstPtr &msg){
-		i2r::enc::Encoder enc(m_buffer[0]);
-		if(!enc.open(m_srcWidth[0], m_srcHeight[0], m_fps[0]))
-			return ;
-
-		enc.encoding(&(msg->data[0]));
+		m_encoder[0].encoding(&(msg->data[0]));
 	}
 
 	void Session_1_callback(const sensor_msgs::Image::ConstPtr &msg){
-		i2r::enc::Encoder enc(m_buffer[1]);
-		if(!enc.open(m_srcWidth[1], m_srcHeight[1], m_fps[1]))
-			return ;
-
-		enc.encoding(&(msg->data[0]));
+		m_encoder[1].encoding(&(msg->data[0]));
 	}
 
 private:
@@ -89,11 +99,13 @@ private:
 	ros::Subscriber m_resize_sub;
     
     // encoder
-    // std::unique_ptr<i2r::enc::Encoder> m_encoder;
+    std::vector<i2r::enc::Encoder> m_encoder;
 	std::unique_ptr<i2r::net::RosRtspServer> m_rtsp;
-    std::vector<i2r::util::Buffer<x264_nal_t>> m_buffer;
+    // std::vector<i2r::util::Buffer<x264_nal_t>> m_buffer;
+    i2r::util::Buffer<x264_nal_t> *m_buffer;
 
-	std::unique_ptr<std::thread> m_thread;
+	std::unique_ptr<std::thread> m_rtspServer_thread;
+	std::thread *m_nextFrameThread;
 
     // param
 	int m_serverPort;
@@ -102,6 +114,7 @@ private:
 
 	std::vector<int> m_srcWidth;
 	std::vector<int> m_srcHeight;
+	std::vector<std::string> m_imageEncode;
     std::vector<int> m_fps;
 	std::vector<std::string> m_streamUrl;
 	std::vector<std::string> m_subTopic;

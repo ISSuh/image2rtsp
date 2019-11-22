@@ -4,15 +4,17 @@
 	<arg name="sessionNumber" 	default="2"/>
 	<arg name="bufferSize" 		default="50"/>
 	
-	<arg name="subTopic_0" 		default="/usb_cam/image_raw"/>
-	<arg name="srcWidth_0" 		default="640"/>
-	<arg name="srcHeight_0"		default="480"/>
+	<arg name="subTopic_0" 		default="/avm/image_raw"/>
+	<arg name="srcWidth_0" 		default="1280"/>
+	<arg name="srcHeight_0"		default="720"/>
+	<arg name="encode_0" 		default="rgb8"/>
 	<arg name="fps_0" 			default="30"/>
 	<arg name="streamUrl_0" 	default="test1"/>
 
-	<arg name="subTopic_1" 		default="/usb_cam/image_raw"/>
-	<arg name="srcWidth_1" 		default="640"/>
-	<arg name="srcHeight_1"		default="480"/>
+	<arg name="subTopic_1" 		default="/rear/resized/image_raw"/>
+	<arg name="srcWidth_1" 		default="1280"/>
+	<arg name="srcHeight_1"		default="720"/>
+	<arg name="encode_1" 		default="rgb8"/>
 	<arg name="fps_1" 			default="30"/>
 	<arg name="streamUrl_1" 	default="test2"/>
 
@@ -24,12 +26,14 @@
 		<param name="subTopic_0" 	type="str" value="$(arg subTopic_0)"/>
 		<param name="srcWidth_0" 	type="int" value="$(arg srcWidth_0)"/>
 		<param name="srcHeight_0"	type="int" value="$(arg srcHeight_0)"/>
+		<param name="encode_0"		type="str" value="$(arg encode_0)"/>
 		<param name="fps_0"			type="int" value="$(arg fps_0)"/>
 		<param name="streamUrl_0" 	type="str" value="$(arg streamUrl_0)"/>
 
 		<param name="subTopic_1" 	type="str" value="$(arg subTopic_1)"/>
 		<param name="srcWidth_1" 	type="int" value="$(arg srcWidth_1)"/>
 		<param name="srcHeight_1"	type="int" value="$(arg srcHeight_1)"/>
+		<param name="encode_1"		type="str" value="$(arg encode_1)"/>
 		<param name="fps_1"			type="int" value="$(arg fps_1)"/>
 		<param name="streamUrl_1" 	type="str" value="$(arg streamUrl_1)"/>
     </node>
