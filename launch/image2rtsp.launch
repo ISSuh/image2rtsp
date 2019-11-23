@@ -1,22 +1,29 @@
 <?xml version="1.0"?>
 <launch>
 	<arg name="port" 			default="8554"/>
-	<arg name="sessionNumber" 	default="2"/>
+	<arg name="sessionNumber" 	default="3"/>
 	<arg name="bufferSize" 		default="50"/>
 	
-	<arg name="subTopic_0" 		default="/avm/image_raw"/>
+	<arg name="subTopic_0" 		default="/image_0"/>
 	<arg name="srcWidth_0" 		default="1280"/>
 	<arg name="srcHeight_0"		default="720"/>
 	<arg name="encode_0" 		default="rgb8"/>
 	<arg name="fps_0" 			default="30"/>
-	<arg name="streamUrl_0" 	default="test1"/>
+	<arg name="streamUrl_0" 	default="test0"/>
 
-	<arg name="subTopic_1" 		default="/rear/resized/image_raw"/>
+	<arg name="subTopic_1" 		default="/image_1"/>
 	<arg name="srcWidth_1" 		default="1280"/>
 	<arg name="srcHeight_1"		default="720"/>
 	<arg name="encode_1" 		default="rgb8"/>
 	<arg name="fps_1" 			default="30"/>
-	<arg name="streamUrl_1" 	default="test2"/>
+	<arg name="streamUrl_1" 	default="test1"/>
+
+	<arg name="subTopic_2" 		default="/image_2"/>
+	<arg name="srcWidth_2" 		default="1280"/>
+	<arg name="srcHeight_2"		default="720"/>
+	<arg name="encode_2" 		default="rgb8"/>
+	<arg name="fps_2" 			default="30"/>
+	<arg name="streamUrl_2" 	default="test2"/>
 
 	<node pkg="image2rtsp" type="image2rtsp" name="image2rtsp" output="screen">
 		<param name="port" 	        type="int" value="$(arg port)"/>
@@ -36,5 +43,12 @@
 		<param name="encode_1"		type="str" value="$(arg encode_1)"/>
 		<param name="fps_1"			type="int" value="$(arg fps_1)"/>
 		<param name="streamUrl_1" 	type="str" value="$(arg streamUrl_1)"/>
+
+		<param name="subTopic_2" 	type="str" value="$(arg subTopic_2)"/>
+		<param name="srcWidth_2" 	type="int" value="$(arg srcWidth_2)"/>
+		<param name="srcHeight_2"	type="int" value="$(arg srcHeight_2)"/>
+		<param name="encode_2"		type="str" value="$(arg encode_2)"/>
+		<param name="fps_2"			type="int" value="$(arg fps_2)"/>
+		<param name="streamUrl_2" 	type="str" value="$(arg streamUrl_2)"/>
     </node>
 </launch>

@@ -13,25 +13,28 @@ template<typename Data>
 class Buffer{
 public:
     Buffer() : m_mutex(), m_cv() {};
-    ~Buffer() {};
+    // Buffer(Buffer<Data>& buff){
+    //     this->m_buffSize = buff.m_buffSize;
+    //     this->m_queue = buff.m_queue;
+    //     this->m_mutex = buff.m_mutex;
+    //     this->m_cv = buff.m_cv;
+    // }
 
+    virtual ~Buffer() {};
 
     void SetBuffSize(const int buffSize) { m_buffSize = buffSize; }
 
     void Push(const Data& data){
         std::unique_lock<std::mutex> lock(m_mutex);
 
-        if(m_queue.size() >= m_buffSize)
-            m_queue.pop();
-
         m_queue.push(data);
 
-        std::cout << "push : " << this << " / " << m_queue.size() << std::endl;
+        // std::cout << "push : " << this << " / " << m_queue.size() << std::endl;
 
         m_cv.notify_one();
     }
 
-    bool Empty(){
+    bool Empty() {
         std::unique_lock<std::mutex> lock(m_mutex);
         return m_queue.empty();
     }
@@ -45,8 +48,6 @@ public:
                 
         data = m_queue.front();
         m_queue.pop();
-
-        std::cout << "pop : " << this << " / " << m_queue.size() << std::endl;
     }
 
     const size_t Size(){

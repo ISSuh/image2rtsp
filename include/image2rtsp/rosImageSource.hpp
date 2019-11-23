@@ -14,40 +14,57 @@ namespace net{
 
 class RosImageSource : public FramedSource{
 public:
-    static EventTriggerId eventTriggerId;
+    static std::vector<RosImageSource*> createNew(UsageEnvironment& env, unsigned preferredFrameSize, unsigned playTimePerFrame, const int sessionNum){
+
+        std::vector<RosImageSource*> rosImageSourceArray;
+        for(auto i = 0 ; i < sessionNum ; ++i)
+            rosImageSourceArray.push_back(new RosImageSource(env, preferredFrameSize, playTimePerFrame));
+
+        return rosImageSourceArray;
+    }
     
-    static RosImageSource* createNew(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>* buffer, unsigned preferredFrameSize, unsigned playTimePerFrame){
-        return new RosImageSource(env, buffer, preferredFrameSize, playTimePerFrame);
+    bool OpenEncoder(const i2r::enc::SessionImageInfo& imageInfo){   
+        if(!m_encoder.Open(imageInfo))
+            return false;
+        else
+            return true;
+    }
+
+    void Encode(const uint8_t* src){
+        m_encoder.Encoding(src);
+
+        envir().taskScheduler().triggerEvent(m_eventTriggerId, this);
     }
 
 protected:
-    RosImageSource(UsageEnvironment& env, i2r::util::Buffer<x264_nal_t>* buffer, unsigned preferredFrameSize, unsigned playTimePerFrame) 
+    RosImageSource(UsageEnvironment& env, unsigned preferredFrameSize, unsigned playTimePerFrame) 
         :   FramedSource(env),
             fPreferredFrameSize(fMaxSize),
             fPlayTimePerFrame(playTimePerFrame),
             fLastPlayTime(0),
-            m_buffer(buffer){
-        if(m_referenceCount == 0)
-        {
+            m_encoder(i2r::enc::Encoder(m_buffer)),
+            m_buffer() {
+        
+        m_buffer.SetBuffSize(50);
 
-        }
+        if(m_referenceCount == 0) { }
         
         ++m_referenceCount;
         
-        if(eventTriggerId == 0){
-            eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
+        if (m_eventTriggerId == 0) {
+            m_eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
         }
     }
     
     virtual ~RosImageSource(void){
         --m_referenceCount;
-        envir().taskScheduler().deleteEventTrigger(eventTriggerId);
-        eventTriggerId = 0;
+        envir().taskScheduler().deleteEventTrigger(m_eventTriggerId);
+        m_eventTriggerId = 0;
     }
 
 private:
     virtual void doGetNextFrame(){
-        deliverFrame();
+        deliverFrame();    
     }
     
     static void deliverFrame0(void* clientData){
@@ -56,19 +73,15 @@ private:
     
     void deliverFrame(){
         if(!isCurrentlyAwaitingData()) return;
-        
-        m_buffer->Pop(m_nalToDeliver);
-
+              
         if (fPlayTimePerFrame > 0 && fPreferredFrameSize > 0) {
             if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
-                // This is the first frame, so use the current time:
                 gettimeofday(&fPresentationTime, NULL);
             } 
             else {
-                // Increment by the play time of the previous data:
                 unsigned uSeconds	= fPresentationTime.tv_usec + fLastPlayTime;
-                fPresentationTime.tv_sec += uSeconds/1000000;
-                fPresentationTime.tv_usec = uSeconds%1000000;
+                fPresentationTime.tv_sec += uSeconds / 1000000;
+                fPresentationTime.tv_usec = uSeconds % 1000000;
             }
 
             fLastPlayTime = (fPlayTimePerFrame*fFrameSize)/fPreferredFrameSize;
@@ -78,20 +91,23 @@ private:
             gettimeofday(&fPresentationTime, NULL);
         }
         
-
-
-        unsigned newFrameSize = m_nalToDeliver.i_payload;
-
-        if (newFrameSize > fMaxSize) {
-            fFrameSize = fMaxSize;
-            fNumTruncatedBytes = newFrameSize - fMaxSize;
-        }
-        else {
-            fFrameSize = newFrameSize;
-        }
+        if(!m_buffer.Empty()){
+            m_buffer.Pop(m_nalToDeliver);
         
-        memcpy(fTo, m_nalToDeliver.p_payload, m_nalToDeliver.i_payload);
-        FramedSource::afterGetting(this);
+            unsigned newFrameSize = m_nalToDeliver.i_payload;
+
+            if (newFrameSize > fMaxSize) {
+                fFrameSize = fMaxSize;
+                fNumTruncatedBytes = newFrameSize - fMaxSize;
+            }
+            else {
+                fFrameSize = newFrameSize;
+            }
+            
+            memcpy(fTo, m_nalToDeliver.p_payload, m_nalToDeliver.i_payload);
+                
+            FramedSource::afterGetting(this);
+        }
     }
 
 private:
@@ -101,11 +117,15 @@ private:
     unsigned fCurrentlyReadSourceNumber;
     unsigned fLastPlayTime;
 
+    i2r::enc::Encoder m_encoder;
+
     x264_nal_t m_nalToDeliver;
-    i2r::util::Buffer<x264_nal_t>* m_buffer;
+    i2r::util::Buffer<x264_nal_t> m_buffer;
 
     unsigned m_referenceCount;
     timeval m_currentTime;
+
+    EventTriggerId m_eventTriggerId;
 };
 
 } // net

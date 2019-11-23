@@ -23,25 +23,32 @@ extern "C"{
 namespace i2r{
 namespace enc{
     
+struct sessionImagaeInfo{
+	int srcWidth;
+	int srcHeight;
+	int fps;
+	std::string fomat;
+} typedef SessionImageInfo;
+
 class Encoder{
 public:
     Encoder(i2r::util::Buffer<x264_nal_t>& buffer): m_encoder(nullptr), m_numNals(0), m_pts(0), m_buffer(buffer) {
     }
 
     ~Encoder(){
-        // if (*m_encoder.get())
-        //     x264_encoder_close(*m_encoder);
+        if (*m_encoder.get())
+            x264_encoder_close(*m_encoder);
 
-        // if (*m_sws)
-        //     sws_freeContext(*m_sws);
+        if (*m_sws)
+            sws_freeContext(*m_sws);
     }
 
-    bool open(const int& srcWidth, const int& srcHeight, const int& fps, const std::string& enc){
+    bool Open(const i2r::enc::SessionImageInfo& imageInfo){
         // set color format
         {
-            if(enc == sensor_msgs::image_encodings::RGB8)
+            if(imageInfo.fomat == sensor_msgs::image_encodings::RGB8)
                 m_inFormat = AV_PIX_FMT_RGB24;
-            else if(enc == sensor_msgs::image_encodings::RGBA8)
+            else if(imageInfo.fomat == sensor_msgs::image_encodings::RGBA8)
                 m_inFormat = AV_PIX_FMT_RGBA;
         }
         
@@ -51,13 +58,13 @@ public:
             m_x264Params.i_log_level = X264_LOG_ERROR;
 
             m_x264Params.i_threads = 2;
-            m_x264Params.i_width = srcWidth;
-            m_x264Params.i_height = srcHeight;
-            m_x264Params.i_fps_num = fps;
+            m_x264Params.i_width = imageInfo.srcWidth;
+            m_x264Params.i_height = imageInfo.srcHeight;
+            m_x264Params.i_fps_num = imageInfo.fps;
             m_x264Params.i_fps_den = 1;
             m_x264Params.i_csp = X264_CSP_I420;
             
-            m_x264Params.i_keyint_max = fps;
+            m_x264Params.i_keyint_max = imageInfo.fps;
             m_x264Params.b_intra_refresh = 1;
             
             m_x264Params.rc.i_rc_method = X264_RC_CRF;
@@ -105,7 +112,7 @@ public:
         return true;
     }
 
-    bool encoding(const uint8_t* src){  
+    bool Encoding(const uint8_t* src){  
         // scale change
         {
             int srcStride = m_x264Params.i_width * 3;
