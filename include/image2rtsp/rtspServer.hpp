@@ -42,7 +42,7 @@ public:
         
         m_sessionImageInfo = std::vector<i2r::enc::SessionImageInfo>(sessionImageInfo);
 
-        // OutPacketBuffer::maxSize = 100000;
+        OutPacketBuffer::maxSize = 600000;
 
         // get hostname
         int cNameLen = 100;
@@ -50,7 +50,13 @@ public:
         gethostname((char*)&(m_cName[0]), cNameLen);
             
         // server handle create
-        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort, m_authDB.get());
+        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort-20, m_authDB.get());
+        if(m_rtspServer == nullptr){
+            ROS_ERROR("Failed to create RTSP server: %s", m_env->getResultMsg());
+            return false;
+        }
+
+        m_proxyRtspServer = RTSPServer::createNew(*m_env, m_rtspPort, m_authDB.get());
         if(m_rtspServer == nullptr){
             ROS_ERROR("Failed to create RTSP server: %s", m_env->getResultMsg());
             return false;
@@ -94,9 +100,15 @@ public:
 
             sms->addSubsession(PassiveServerMediaSubsession::createNew(*m_videoSink[index], m_rtcp[index]));
 
+            auto proxySms = ProxyServerMediaSession::createNew(*m_env, m_proxyRtspServer, 
+                            m_rtspServer->rtspURL(sms), std::to_string(index).c_str(), 
+                            NULL, NULL, 0, 1);
+
             m_rtspServer->addServerMediaSession(sms);
+            m_proxyRtspServer->addServerMediaSession(proxySms);
 
             ROS_INFO("Play this stream using the URL %s",  m_rtspServer->rtspURL(sms));
+            ROS_INFO("Play this stream using the Proxy URL %s", m_proxyRtspServer->rtspURL(proxySms));
         }
     }
 
@@ -123,6 +135,7 @@ private:
     std::unique_ptr<UserAuthenticationDatabase> m_authDB;
 
     RTSPServer* m_rtspServer;
+    RTSPServer* m_proxyRtspServer;
     
     std::vector<unsigned char> m_cName;
     const unsigned int m_rtpPortNum;

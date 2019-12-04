@@ -57,13 +57,12 @@ public:
 		{
 			m_sub.push_back(m_nh->subscribe(m_subTopic[0], 10, &Image2RTSP_sample::Session_0_callback, this));
 			m_sub.push_back(m_nh->subscribe(m_subTopic[1], 10, &Image2RTSP_sample::Session_1_callback, this));
-			m_sub.push_back(m_nh->subscribe(m_subTopic[2], 10, &Image2RTSP_sample::Session_2_callback, this));
 		}
 		
 		// run media & server thread
 		{
 			for(auto i = 0 ; i < m_sessionNumber ; ++i){
-				m_rtspMedia[i] = std::thread(&Image2RTSP_sample::MediaRun, this, i);
+				m_rtsp->Play(i);
 			}
 
 			m_rtspServer = std::thread(&Image2RTSP_sample::ServerRun, this);
@@ -89,10 +88,6 @@ private:
 
 	void Session_1_callback(const sensor_msgs::Image::ConstPtr &msg){
 		m_rtsp->StreamImage(&(msg->data[0]), 1);
-	}
-
-	void Session_2_callback(const sensor_msgs::Image::ConstPtr &msg){
-		m_rtsp->StreamImage(&(msg->data[0]), 2);
 	}
 
 	void MediaRun(int index){

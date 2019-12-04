@@ -104,8 +104,8 @@ private:
                 fFrameSize = newFrameSize;
             }
             
-            memcpy(fTo, m_nalToDeliver.p_payload, m_nalToDeliver.i_payload);
-                
+            auto res = std::copy(m_nalToDeliver.p_payload, m_nalToDeliver.p_payload + m_nalToDeliver.i_payload, fTo);    
+            
             FramedSource::afterGetting(this);
         }
     }
