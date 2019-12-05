@@ -50,6 +50,8 @@ public:
                 m_inFormat = AV_PIX_FMT_RGB24;
             else if(imageInfo.fomat == sensor_msgs::image_encodings::RGBA8)
                 m_inFormat = AV_PIX_FMT_RGBA;
+            else if(imageInfo.fomat == sensor_msgs::image_encodings::BGR8)
+                m_inFormat = AV_PIX_FMT_BGR24;
         }
         
         // set x264 param
