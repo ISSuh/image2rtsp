@@ -50,7 +50,7 @@ public:
         gethostname((char*)&(m_cName[0]), cNameLen);
             
         // server handle create
-        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort+10, m_authDB.get());
+        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort, m_authDB.get());
         if(m_rtspServer == nullptr){
             ROS_ERROR("Failed to create RTSP server: %s", m_env->getResultMsg());
             return false;

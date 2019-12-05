@@ -11,7 +11,7 @@
 	<arg name="fps_0" 			default="30"/>
 	<arg name="streamUrl_0" 	default="test0"/>
 
-	<arg name="subTopic_1" 		default="/image_1"/>
+	<arg name="subTopic_1" 		default="image_1"/>
 	<arg name="srcWidth_1" 		default="640"/>
 	<arg name="srcHeight_1"		default="480"/>
 	<arg name="encode_1" 		default="rgb8"/>
