@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 	<arg name="port" 			default="8554"/>
+	<arg name="proxyServerPort" default="8564"/>
 	<arg name="sessionNumber" 	default="2"/>
-	<arg name="bufferSize" 		default="50"/>
 	
 	<arg name="subTopic_0" 		default="/image_0"/>
 	<arg name="srcWidth_0" 		default="640"/>
@@ -19,22 +19,22 @@
 	<arg name="streamUrl_1" 	default="test1"/>
 
 	<node pkg="image2rtsp" type="image2rtsp" name="image2rtsp" output="screen">
-		<param name="port" 	        type="int" value="$(arg port)"/>
-		<param name="sessionNumber"	type="int" value="$(arg sessionNumber)"/>
-		<param name="bufferSize"	type="int" value="$(arg bufferSize)"/>
+		<param name="port" 	        	type="int" value="$(arg port)"/>
+		<param name="proxyServerPort"	type="int" value="$(arg proxyServerPort)"/>
+		<param name="sessionNumber"		type="int" value="$(arg sessionNumber)"/>
 			
-		<param name="subTopic_0" 	type="str" value="$(arg subTopic_0)"/>
-		<param name="srcWidth_0" 	type="int" value="$(arg srcWidth_0)"/>
-		<param name="srcHeight_0"	type="int" value="$(arg srcHeight_0)"/>
-		<param name="encode_0"		type="str" value="$(arg encode_0)"/>
-		<param name="fps_0"			type="int" value="$(arg fps_0)"/>
-		<param name="streamUrl_0" 	type="str" value="$(arg streamUrl_0)"/>
+		<param name="subTopic_0" 		type="str" value="$(arg subTopic_0)"/>
+		<param name="srcWidth_0" 		type="int" value="$(arg srcWidth_0)"/>
+		<param name="srcHeight_0"		type="int" value="$(arg srcHeight_0)"/>
+		<param name="encode_0"			type="str" value="$(arg encode_0)"/>
+		<param name="fps_0"				type="int" value="$(arg fps_0)"/>
+		<param name="streamUrl_0" 		type="str" value="$(arg streamUrl_0)"/>
 
-		<param name="subTopic_1" 	type="str" value="$(arg subTopic_1)"/>
-		<param name="srcWidth_1" 	type="int" value="$(arg srcWidth_1)"/>
-		<param name="srcHeight_1"	type="int" value="$(arg srcHeight_1)"/>
-		<param name="encode_1"		type="str" value="$(arg encode_1)"/>
-		<param name="fps_1"			type="int" value="$(arg fps_1)"/>
-		<param name="streamUrl_1" 	type="str" value="$(arg streamUrl_1)"/>
+		<param name="subTopic_1" 		type="str" value="$(arg subTopic_1)"/>
+		<param name="srcWidth_1" 		type="int" value="$(arg srcWidth_1)"/>
+		<param name="srcHeight_1"		type="int" value="$(arg srcHeight_1)"/>
+		<param name="encode_1"			type="str" value="$(arg encode_1)"/>
+		<param name="fps_1"				type="int" value="$(arg fps_1)"/>
+		<param name="streamUrl_1" 		type="str" value="$(arg streamUrl_1)"/>
     </node>
 </launch>

@@ -17,8 +17,8 @@ public:
 		m_nh = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle("~"));
 
 		m_nh->getParam("port", m_serverPort);
+		m_nh->getParam("proxyServerPort", m_proxyServerPort);
 		m_nh->getParam("sessionNumber", m_sessionNumber);
-		m_nh->getParam("bufferSize", m_buffSize);
 
 		{
 			m_sessionImageInfo = std::vector<i2r::enc::SessionImageInfo>(m_sessionNumber);
@@ -43,7 +43,7 @@ public:
 	bool Run(){
 		// initialize x264 handle & rtsp stream
 		{	
-			m_rtsp = std::unique_ptr<i2r::net::RosRtspServer>(new i2r::net::RosRtspServer(m_serverPort, m_sessionNumber));
+			m_rtsp = std::unique_ptr<i2r::net::RosRtspServer>(new i2r::net::RosRtspServer(m_serverPort, m_proxyServerPort, m_sessionNumber));
 
 			if(!m_rtsp->Init(m_sessionImageInfo))
 				return false;
@@ -112,8 +112,8 @@ private:
     
 	// param
 	int m_serverPort;
+	int m_proxyServerPort;
 	int m_sessionNumber;
-	int m_buffSize;
 
 	std::vector<i2r::enc::SessionImageInfo> m_sessionImageInfo;
 	std::vector<std::string> m_streamUrl;

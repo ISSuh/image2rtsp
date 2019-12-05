@@ -23,10 +23,10 @@ namespace net{
 
 class RosRtspServer{
 public:
-    RosRtspServer(const int port, const int sessionNum) :  
+    RosRtspServer(const int port,const int proxyPort, const int sessionNum) :  
             m_rtpPortNum(18888), m_rtcpPortNum(m_rtpPortNum+1), m_ttl(255),
             m_rtpPayloadFormat(96), m_estimatedSessionBandwidth(500),
-            m_rtspPort(port), m_sessionNum(sessionNum){
+            m_rtspPort(port), m_rtspProxyPort(proxyPort), m_sessionNum(sessionNum){
         
         m_scheduler = std::unique_ptr<TaskScheduler>(BasicTaskScheduler::createNew());
         m_env = BasicUsageEnvironment::createNew(*m_scheduler);
@@ -42,7 +42,7 @@ public:
         
         m_sessionImageInfo = std::vector<i2r::enc::SessionImageInfo>(sessionImageInfo);
 
-        OutPacketBuffer::maxSize = 600000;
+        OutPacketBuffer::maxSize = 100000;
 
         // get hostname
         int cNameLen = 100;
@@ -50,15 +50,15 @@ public:
         gethostname((char*)&(m_cName[0]), cNameLen);
             
         // server handle create
-        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort-20, m_authDB.get());
+        m_rtspServer = RTSPServer::createNew(*m_env, m_rtspPort+10, m_authDB.get());
         if(m_rtspServer == nullptr){
             ROS_ERROR("Failed to create RTSP server: %s", m_env->getResultMsg());
             return false;
         }
 
-        m_proxyRtspServer = RTSPServer::createNew(*m_env, m_rtspPort, m_authDB.get());
+        m_proxyRtspServer = RTSPServerWithREGISTERProxying::createNew(*m_env, m_rtspProxyPort, m_authDB.get(), NULL, 65, true, 2, NULL, NULL);
         if(m_rtspServer == nullptr){
-            ROS_ERROR("Failed to create RTSP server: %s", m_env->getResultMsg());
+            ROS_ERROR("Failed to create Proxy RTSP server: %s", m_env->getResultMsg());
             return false;
         }
 
@@ -106,7 +106,7 @@ public:
 
             m_rtspServer->addServerMediaSession(sms);
             m_proxyRtspServer->addServerMediaSession(proxySms);
-
+                        
             ROS_INFO("Play this stream using the URL %s",  m_rtspServer->rtspURL(sms));
             ROS_INFO("Play this stream using the Proxy URL %s", m_proxyRtspServer->rtspURL(proxySms));
         }
@@ -155,6 +155,7 @@ private:
 
     // param
     const int m_rtspPort;
+    const int m_rtspProxyPort;
     const unsigned char m_rtpPayloadFormat;
     const int m_sessionNum;
     std::vector<i2r::enc::SessionImageInfo> m_sessionImageInfo;
