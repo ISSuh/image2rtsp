@@ -34,7 +34,7 @@ After install library, should modify "image2rtsp/CMakeLists.txt" to your develop
 ### ***Supported color channel***
 
 - ROS Image\
--- Only Supported RGB8, RGBA8
+-- Only Supported RGB8, BGR8, RGBA8
 
 ### ***Caution!!***
 
