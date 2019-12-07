@@ -8,7 +8,6 @@
 namespace i2r{
 namespace util{
 
-// todo : fix memory leak 
 template<typename Data>
 class Buffer{
 public:
