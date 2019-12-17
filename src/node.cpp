@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <unordered_map>
 #include <thread>
 
 #include <ros/ros.h>
@@ -24,8 +23,6 @@ public:
 			m_sessionImageInfo = std::vector<i2r::enc::SessionImageInfo>(m_sessionNumber);
 			m_streamUrl = std::vector<std::string>(m_sessionNumber);
 			m_subTopic = std::vector<std::string>(m_sessionNumber);
-
-			m_rtspMedia = std::vector<std::thread>(m_sessionNumber);
 		}
 
 		for(auto i = 0 ; i < m_sessionNumber ; ++i){
@@ -72,11 +69,6 @@ public:
 	}
 
 	void Join(){
-		for(auto i = 0 ; i < m_sessionNumber ; ++i){
-			if(m_rtspMedia[i].joinable())
-				m_rtspMedia[i].join();
-		}
-
 		if(m_rtspServer.joinable())
 			m_rtspServer.join();
 	}
@@ -108,7 +100,6 @@ private:
 
 	//thread
 	std::thread m_rtspServer;
-	std::vector<std::thread> m_rtspMedia;
     
 	// param
 	int m_serverPort;

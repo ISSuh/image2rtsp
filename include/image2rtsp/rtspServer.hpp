@@ -107,7 +107,7 @@ public:
             m_rtspServer->addServerMediaSession(sms);
             m_proxyRtspServer->addServerMediaSession(proxySms);
                         
-            ROS_INFO("Play this stream using the URL %s",  m_rtspServer->rtspURL(sms));
+            ROS_INFO("Play this stream using the Local URL %s",  m_rtspServer->rtspURL(sms));
             ROS_INFO("Play this stream using the Proxy URL %s", m_proxyRtspServer->rtspURL(proxySms));
         }
     }
