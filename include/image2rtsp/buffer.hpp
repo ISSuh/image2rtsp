@@ -8,17 +8,10 @@
 namespace i2r{
 namespace util{
 
-// todo : fix memory leak 
 template<typename Data>
 class Buffer{
 public:
     Buffer() : m_mutex(), m_cv() {};
-    // Buffer(Buffer<Data>& buff){
-    //     this->m_buffSize = buff.m_buffSize;
-    //     this->m_queue = buff.m_queue;
-    //     this->m_mutex = buff.m_mutex;
-    //     this->m_cv = buff.m_cv;
-    // }
 
     virtual ~Buffer() {};
 
@@ -28,9 +21,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mutex);
 
         m_queue.push(data);
-
-        // std::cout << "push : " << this << " / " << m_queue.size() << std::endl;
-
+        
         m_cv.notify_one();
     }
 

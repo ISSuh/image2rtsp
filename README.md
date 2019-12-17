@@ -26,7 +26,7 @@ This 'image2rtsp package' is subscribed some of image topic(***sensor_msgs/Image
 #### Install library related image encoding(encode to H264)
 
 ```bash
-sudo apt-get install x264 libswscale-dev libavformat-dev libavcodec-dev libavutil-dev
+sudo apt-get install libx264-dev libswscale-dev libavformat-dev libavcodec-dev libavutil-dev
 ```
 
 After install library, should modify "image2rtsp/CMakeLists.txt" to your development envaroment.
@@ -34,7 +34,7 @@ After install library, should modify "image2rtsp/CMakeLists.txt" to your develop
 ### ***Supported color channel***
 
 - ROS Image\
--- Only Supported RGB8, RGBA8
+-- Only Supported RGB8, BGR8, RGBA8
 
 ### ***Caution!!***
 
