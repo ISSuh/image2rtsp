@@ -41,7 +41,6 @@ After install library, you must modify "image2rtsp/CMakeLists.txt" to your devel
 Befor compile it, add your ROS image callback as many as session num at 'image2rtsp/src/node.cpp ' line 61, 82
 
 ```C++
-private:
 
 ...
 
