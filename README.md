@@ -59,6 +59,12 @@ private:
 private:
     // write your callback as many as your sessions
     void Session_0_callback(const sensor_msgs::Image::ConstPtr &msg){
+        /**
+        * void StreamImage(const uint8_t* src, const int index)
+        * 
+        * @params src ROS image data.
+        * @params index Session index numbers.
+        **/
         m_rtsp->StreamImage(&(msg->data[0]), 0);
     }
 
