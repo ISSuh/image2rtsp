@@ -44,11 +44,7 @@ protected:
             fLastPlayTime(0),
             m_encoder(i2r::enc::Encoder(m_buffer)),
             m_buffer() {
-        
-        m_buffer.SetBuffSize(50);
-
-        if(m_referenceCount == 0) { }
-        
+                
         ++m_referenceCount;
         
         if (m_eventTriggerId == 0) {

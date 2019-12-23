@@ -37,6 +37,11 @@ public:
 		}
 	}
 
+	~Image2RTSP_sample() {
+		if(m_rtspServer.joinable())
+			m_rtspServer.join();
+	}
+
 	bool Run(){
 		// initialize x264 handle & rtsp stream
 		{	
@@ -51,16 +56,16 @@ public:
 		}
 
 		// regist ros subscribe callback
+		// regist your callback as many as your sessions
 		{
 			m_sub.push_back(m_nh->subscribe(m_subTopic[0], 10, &Image2RTSP_sample::Session_0_callback, this));
 			m_sub.push_back(m_nh->subscribe(m_subTopic[1], 10, &Image2RTSP_sample::Session_1_callback, this));
 		}
 		
 		// run media & server thread
-		{
-			for(auto i = 0 ; i < m_sessionNumber ; ++i){
+		{	
+			for(auto i = 0 ; i < m_sessionNumber ; ++i)
 				m_rtsp->Play(i);
-			}
 
 			m_rtspServer = std::thread(&Image2RTSP_sample::ServerRun, this);
 		}
@@ -74,16 +79,13 @@ public:
 	}
 
 private:
+	// write your callback as many as your sessions
 	void Session_0_callback(const sensor_msgs::Image::ConstPtr &msg){
 		m_rtsp->StreamImage(&(msg->data[0]), 0);
 	}
 
 	void Session_1_callback(const sensor_msgs::Image::ConstPtr &msg){
 		m_rtsp->StreamImage(&(msg->data[0]), 1);
-	}
-
-	void MediaRun(int index){
-		m_rtsp->Play(index);
 	}
 
 	void ServerRun(){
@@ -120,8 +122,6 @@ int main(int argc, char** argv){
 		ros::shutdown();
 
 	ros::spin();
-
-	sample.Join();
 	
 	ros::shutdown();
 }

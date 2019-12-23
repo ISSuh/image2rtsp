@@ -101,7 +101,7 @@ public:
             sms->addSubsession(PassiveServerMediaSubsession::createNew(*m_videoSink[index], m_rtcp[index]));
 
             auto proxySms = ProxyServerMediaSession::createNew(*m_env, m_proxyRtspServer, 
-                            m_rtspServer->rtspURL(sms), std::to_string(index).c_str(), 
+                            m_rtspServer->rtspURL(sms), streamName.c_str(), 
                             NULL, NULL, 0, 1);
 
             m_rtspServer->addServerMediaSession(sms);

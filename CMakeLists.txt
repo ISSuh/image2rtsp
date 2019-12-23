@@ -8,8 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
-find_package(Boost REQUIRED COMPONENTS system)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -41,9 +39,18 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/live555/UsageEnvironment
  )
 
+EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
+message( STATUS "Architecture: ${ARCHITECTURE}" )
+
+if( ${ARCHITECTURE} STREQUAL "aarch64" )
+    set( LIVE555_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/arm_64" )
+else()
+    set( LIVE555_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/x86_64" )
+endif()
+
 link_directories(
   ${x264_LIBRARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/lib
+  ${LIVE555_LIBRARY_DIR}
 )
 
 add_executable(${PROJECT_NAME} src/node.cpp)
@@ -52,7 +59,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PRE
 
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-
+  ${OpenCV_LIBS}
+  
   x264
   swscale
   avformat

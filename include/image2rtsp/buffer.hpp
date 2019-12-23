@@ -15,8 +15,6 @@ public:
 
     virtual ~Buffer() {};
 
-    void SetBuffSize(const int buffSize) { m_buffSize = buffSize; }
-
     void Push(const Data& data){
         std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -50,7 +48,6 @@ private:
     std::queue<Data> m_queue;
     std::mutex m_mutex;
     std::condition_variable m_cv;
-    int m_buffSize;
 };
 
 } // util
